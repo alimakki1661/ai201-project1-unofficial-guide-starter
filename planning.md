@@ -9,6 +9,7 @@
 
 ## Domain
 
+ My Unofficial Guide makes student reviews of College of Staten Island Computer Science professors searchable. This knowledge is valuable because it helps students make better decisions about which professors and courses fit their learning style before they register, and it's hard to find through official channels because college websites usually only show basic course descriptions, not honest student experiences about workload, grading, exams, feedback, or teaching quality.
 
 ---
 
