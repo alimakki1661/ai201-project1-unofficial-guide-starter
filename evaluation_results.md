@@ -21,8 +21,7 @@ According to the student reviews, attendance is not mandatory in Professor Jahaj
 4. `FatmaKausar_CS.txt` (distance: 0.884): Professor Fatma Kausar (Computer Science, CSI): th, 2024 For Credit: Yes Attendance: Mandatory Would Take Again: Yes Grade: A Textbook: N/A She was awesome. Very easy to talk to, curved exams, and lectures were easy to follow and tried to keep studen...
 5. `SafetJahaj_CS.txt` (distance: 0.909): Professor Safet Jahaj (Computer Science, CSI): r Credit: Yes Attendance: Not Mandatory Would Take Again: Yes Grade: Rather not say Textbook: N/A one word! AMAZING Gives good feedback Hilarious Caring  Quality 5.0 Difficulty 3.0 CSC220 Dec 19th, 2024 ...
 
-**Accuracy judgment:** _TBD — fill in after reviewing_
-
+**Accuracy judgment:** ✅ Accurate. The system correctly answered "not mandatory" and grounded the response in the actual SafetJahaj chunk (rank 1, distance 0.663). Retrieval also pulled two unrelated wrong-prof chunks (Kausar, Rao), but the LLM correctly ignored them when forming the answer — good grounding behavior.
 ---
 
 ## Q2: How does Professor Edemacu structure his CSC326 course?
@@ -49,7 +48,7 @@ According to the student reviews, Professor Edemacu structures his CSC326 course
 4. `PingShi_CS.txt` (distance: 0.855): Professor Ping Shi (Computer Science, CSI): es I had her for CSC220 and CSC 211. If you actually put in the effort to learn the material you will be fine. She wants you to actually understand content. Clear grading criteria Gives good feedback Access...
 5. `EdemacuKENNEDY_CS.txt` (distance: 0.925): Professor Edemacu K E N N E D Y (Computer Science, CSI): 4 / 5 Overall Quality Based on 4 ratings Edemacu KENNEDY Professor in the Computer Science department at College of Staten Island (CUNY - Staten Island) 75% Would take again 3.8 Level of Diffic...
 
-**Accuracy judgment:** _TBD — fill in after reviewing_
+**Accuracy judgment:** ✅ Accurate. The system captured all the structural elements in the expected answer (two quizzes, group project, open-book final with notes) and additionally surfaced "lecture heavy" and "mandatory attendance," which are also supported by the reviews. Three of the top 5 retrieved chunks were from EdemacuKENNEDY_CS.txt, giving the LLM strong context.
 
 ---
 
@@ -72,7 +71,7 @@ According to the student reviews, opinions about Professor Rao are mixed. Some s
 4. `JunRao_CS.txt` (distance: 0.969): Professor Jun Rao (Computer Science, CSI): th, 2025 For Credit: Yes Attendance: Mandatory Would Take Again: Yes Grade: A+ Textbook: N/A Professor is an amazing instructor who truly cares about students' success. Their lectures are clear, engaging, an...
 5. `JunRao_CS.txt` (distance: 0.990): Professor Jun Rao (Computer Science, CSI): 1.9 / 5 Overall Quality Based on 24 ratings Jun Rao Professor in the Computer Science department at College of Staten Island (CUNY - Staten Island) 24% Would take again 3.9 Level of Difficulty  Rating Distri...
 
-**Accuracy judgment:** _TBD — fill in after reviewing_
+**Accuracy judgment:** ⚠️ Partially accurate. The system characterized opinions as "mixed," which is defensible given the specific 5 reviews retrieved (3 negative, 2 positive), but it doesn't reflect the overall pattern (1.9/5 rating, 15 of 24 reviews 1-star). The 1.9/5 stat was present in chunk #5 of the retrieved set but the LLM didn't synthesize it into the answer — it focused on individual review opinions instead of aggregating the rating distribution data.
 
 ---
 
@@ -99,7 +98,7 @@ I don't have enough information in the documents to answer that.
 4. `FatmaKausar_CS.txt` (distance: 0.786): Professor Fatma Kausar (Computer Science, CSI): th, 2024 For Credit: Yes Attendance: Mandatory Would Take Again: Yes Grade: A Textbook: N/A She was awesome. Very easy to talk to, curved exams, and lectures were easy to follow and tried to keep studen...
 5. `TatianaAnderson_CS.txt` (distance: 0.804): Professor Tatiana Anderson (Computer Science, CSI): 30th, 2024 For Credit: Yes Attendance: Mandatory Grade: A Textbook: Yes To add on, the project was extremely complicated. Our group was very confused as to what to do for it and she did not teach us...
 
-**Accuracy judgment:** _TBD — fill in after reviewing_
+**Accuracy judgment:** ❌ Inaccurate — this is the project's main failure case. The expected answer is "Edemacu Kennedy and Tatiana Anderson," but the system said it didn't have enough information. Retrieval pulled mostly wrong-course chunks (Shi for CSC220/CSC211, Kapaj for CSC315, Mohamed) instead of the CSC326-specific chunks from Edemacu and Anderson. See the failure case analysis below for the explanation.
 
 ---
 
@@ -123,7 +122,27 @@ I don't have enough information in the documents to answer that.
 4. `EdemacuKENNEDY_CS.txt` (distance: 1.231): Professor Edemacu K E N N E D Y (Computer Science, CSI): llowed. He has a super nice personality and is a professor that genuinely cares about his students and their success. Group projects Gives good feedback Caring  Quality 1.0 Difficulty 5.0 CSC32...
 5. `LouisPetingi_CS.txt` (distance: 1.282): Professor Louis Petingi (Computer Science, CSI): ood professor, but the final exam tanked my grade, along with other students'. It was difficult.  Quality 5.0 Difficulty 1.0 CSC382 May 26th, 2025 For Credit Yes Attendance Mandatory Would Take Again Y...
 
-**Accuracy judgment:** _TBD — fill in after reviewing_
+**Accuracy judgment:** ✅ Accurate. The system correctly refused with "I don't have enough information in the documents to answer that," which is the exact phrasing required by the system prompt. Retrieval did pull Petingi chunks (since the query mentioned his name), but none contained research-area information, and the LLM resisted any temptation to hallucinate from training knowledge.
+
+
+## Summary
+
+- 3/5 fully accurate, 1/5 partially accurate, 1/5 inaccurate (failure case)
+- Q1, Q2, Q5: ✅ Accurate
+- Q3: ⚠️ Partially accurate
+- Q4: ❌ Inaccurate (failure case — see below)
+
+## Failure Case: Q4 — Course Code Disambiguation
+
+**Question:** "Which professors teach CSC326 at CSI?"
+**Expected:** Edemacu Kennedy and Tatiana Anderson
+**Got:** "I don't have enough information in the documents to answer that"
+
+**Why it failed:** This is a course-code lookup query, which semantic search handles poorly. When searching for "CSC326," the embedding model considers the whole chunk's meaning, not just whether the substring "CSC326" appears. Many chunks share the general pattern "professor teaches CSC###," so chunks about CSC220, CSC315, etc. ranked similarly to CSC326 chunks. The CSC326 chunks from Edemacu emphasize teaching style ("Group projects", "Tough grader") rather than the course code, weakening their embedding match against a course-code query.
+
+**Pipeline component responsible:** Retrieval (specifically, the limits of dense semantic search for keyword-precise queries).
+
+**Possible fix:** Hybrid search combining semantic similarity (current) with BM25 keyword search would catch the literal "CSC326" string and surface those chunks. This is one of the stretch features mentioned in the project spec.
 
 ---
 
