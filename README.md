@@ -274,44 +274,7 @@ All 5 evaluation questions from `planning.md`, run end-to-end through the system
 
 - *What it produced:* A diagnosis: RMP reviews don't repeat the professor's name within review bodies, so only chunk #0 of each file (containing the header) had the professor name in the embedding text. All other chunks lost the connection between the professor's name and the review content. Claude proposed prepending `Professor [Name] (Computer Science, CSI):` to every chunk before embedding, and rewrote the `build_chunk_list()` function to do so.
 
-- *What I changed or overrode:* I accepted the diagnosis and fix as proposed, but I directed the change to be documented in `README.md` (Chunking Strategy section) and `Spec Reflection` (as a divergence from my original `planning.md`), since the fix wasn't in my original plan. I also tested the fix on all three of my Milestone 4 retrieval queries before moving on, which confirmed Jahaj (Q1), Edemacu (Q2), and Rao (Q3) all removed.
-
----
-
-## Failure Case Analysis
-
-**Question that failed:** "Which professors teach CSC326 at CSI?"
-
-**What the system returned:** "I don't have enough information in the documents to answer that."
-
-**Root cause (tied to a specific pipeline stage):** This failure is rooted in the **retrieval stage**, specifically the limits of dense semantic search for keyword-precise queries. When searching for "CSC326," the embedding model considers the whole chunk's meaning, not just whether the substring "CSC326" appears. Many of my chunks share the general pattern "professor teaches CSC###," so chunks about CSC220, CSC315, and other course codes scored similarly to CSC326 chunks. The actual CSC326 chunks from Edemacu and Anderson didn't surface in the top-5 because they emphasize teaching style descriptors ("Group projects," "Tough grader") rather than the course code itself, weakening their embedding match against a course-code-focused query. The Tatiana Anderson chunk that *was* retrieved (rank 5) discussed CSC330, not CSC326, even though her file contains both. The LLM, seeing five top chunks none of which clearly answered the question, correctly refused.
-
-**What you would change to fix it:** Add hybrid retrieval combining the current semantic search with BM25 keyword search. BM25 would directly match the literal string "CSC326" and surface those chunks regardless of their surrounding semantic content. This is one of the stretch features listed in the project spec, and would be the right next step for this system. A simpler intermediate fix would be to add explicit course-code metadata to each chunk during ingestion (extracting course codes via regex) and supporting a metadata filter at query time.
-
----
-
-## Spec Reflection
-
-**One way the spec helped me during implementation:** The chunking guidance in the spec — specifically the bullet point about how "review-style text may warrant smaller chunks than long-form guides" and the guiding questions about whether a key fact spans two chunks — made me think carefully about chunk size before I wrote any code. Without that prompt, I would have defaulted to a generic 1000-character chunk and split reviews mid-content. Because I'd thought through the structure of an RMP review first (300–600 characters per review, self-contained, metadata-heavy), the 500-character / 100-overlap choice I committed to in `planning.md` actually fit the data on first try — chunks aligned with reviews most of the time. The spec's insistence on writing this down *before* writing the code meant I had a defensible design to point back to when retrieval test results came in.
-
-**One way my implementation diverged from the spec, and why:** My implementation added a step that wasn't in my original `planning.md`: prepending every chunk with `Professor [Name] (Computer Science, CSI):` before embedding. The original spec only said to attach professor name as metadata, but during Milestone 4 retrieval testing I discovered that semantic search couldn't match queries like "What do students think of Professor Rao?" — because RMP reviews don't repeat the professor's name within review bodies, so most chunks had no professor name in the embedding text itself. Metadata helps source attribution but doesn't influence the embedding similarity score. I diverged from the spec by injecting the professor name into the chunk text, which immediately fixed retrieval. This is documented in the Chunking Strategy section above.
-
----
-
-## AI Usage
-
-**Instance 1 — Document cleaning script (Milestone 3)**
-
-- *What I gave the AI:* My `planning.md` Documents and Chunking Strategy sections, plus a sample of one raw RMP file. I asked Claude to write a Python function that removes RMP boilerplate (UI labels, "Similar Professors" lists, "Thumbs up/down" footers, ad markers) while preserving review text, ratings, course codes, and metadata.
-
-- *What it produced:* A `clean_document()` function using a line-by-line pass with pattern matching and an index-based skip for multi-line blocks like "Similar Professors."
-
-- *What I changed or overrode:* The first version had a bug — it skipped 11 lines after detecting "Similar Professors" when the actual block is 7 lines. This caused the first review of every file to lose its "Quality" and score lines, since they fell within the over-counted skip range. I caught the bug by inspecting the cleaned preview of `LouisPetingi_CS.txt`, told Claude exactly what was missing, and Claude produced the fix (changing 11 to 7 and adding a separate regex skip for the "N Student Ratings" line that had been incidentally caught by the over-count). I also directed the cleaning to *preserve* the rating distribution data (e.g., "Awesome 5: 18") because my Q3 evaluation question relies on it — the default would have been to treat that block as boilerplate.
-
-**Instance 2 — Diagnosing and fixing retrieval failure on Q3 (Milestone 4)**
-
-- *What I gave the AI:* The output of my first retrieval test where Q3 ("What do students think of Professor Rao?") returned zero JunRao chunks in the top-5. I shared the actual top-5 results showing chunks from Mohamed, Edemacu, and Bruno instead.
-
-- *What it produced:* A diagnosis: RMP reviews don't repeat the professor's name within review bodies, so only chunk #0 of each file (containing the header) had the professor name in the embedding text. All other chunks lost the connection between the professor's name and the review content. Claude proposed prepending `Professor [Name] (Computer Science, CSI):` to every chunk before embedding, and rewrote the `build_chunk_list()` function to do so.
-
 - *What I changed or overrode:* I accepted the diagnosis and fix as proposed, but I directed the change to be documented in `README.md` (Chunking Strategy section) and `Spec Reflection` (as a divergence from my original `planning.md`), since the fix wasn't in my original plan. I also tested the fix on all three of my Milestone 4 retrieval queries before moving on, which confirmed Jahaj (Q1), Edemacu (Q2), and Rao (Q3) all improved.
+
+---
+
